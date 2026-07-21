@@ -359,8 +359,8 @@ with tab4:
 
         if ml_predict_btn:
             ml_bmi = round(ml_weight / ((ml_height / 100) ** 2), 2)
-            
-            features = np.array([[
+
+            feature_values = [
                 int(ml_age),
                 1 if ml_gender == "Nữ" else 2,
                 int(ml_height),
@@ -372,13 +372,26 @@ with tab4:
                 1 if ml_smoke == "Có" else 0,
                 1 if ml_alco == "Có" else 0,
                 1 if ml_active == "Có" else 0,
-                float(ml_bmi)
-            ]])
-            
-            scaler = ml_data["scaler"]
+                float(ml_bmi),
+            ]
+            features_df = pd.DataFrame([feature_values], columns=ml_data.get("features", [
+                "age", "gender", "height", "weight", "ap_hi", "ap_lo",
+                "cholesterol", "gluc", "smoke", "alco", "active", "BMI"
+            ]))
+
+            scaler = ml_data.get("scaler")
+            imputer = ml_data.get("imputer")
             model = ml_data["model"]
-            features_scaled = scaler.transform(features)
-            
+
+            features_processed = features_df
+            if imputer is not None:
+                features_processed = imputer.transform(features_df)
+
+            if scaler is not None:
+                features_scaled = scaler.transform(features_processed)
+            else:
+                features_scaled = features_processed
+
             probs = model.predict_proba(features_scaled)[0]
             prob_healthy = probs[0] * 100
             prob_sick = probs[1] * 100
